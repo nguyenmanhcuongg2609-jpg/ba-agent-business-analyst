@@ -1,0 +1,62 @@
+[
+    {
+        "question": "Kiến trúc RAG là gì?",
+        "contexts": ["RAG (Retrieval-Augmented Generation) là một kiến trúc kết hợp hệ thống truy xuất thông tin (retrieval) và mô hình sinh ngôn ngữ (generation) để tăng cường độ chính xác và giảm thiểu hiện tượng hallucination (ảo giác) của LLM."],
+        "ground_truth": "RAG là hệ thống kết hợp việc truy xuất thông tin (retriever) và sinh ngôn ngữ (generator) để giúp LLM trả lời chính xác hơn dựa trên ngữ cảnh được cung cấp."
+    },
+    {
+        "question": "BM25 có vai trò gì trong hệ thống Hybrid Search?",
+        "contexts": ["Hybrid Search kết hợp hai phương pháp: tìm kiếm từ khóa truyền thống sử dụng BM25 để bắt chính xác các keyword học thuật, và tìm kiếm ngữ nghĩa sử dụng Vector Embeddings để hiểu ý nghĩa ngữ cảnh."],
+        "ground_truth": "BM25 có vai trò thực hiện tìm kiếm từ khóa (keyword search), giúp bắt chính xác các thuật ngữ chuyên ngành và từ khóa học thuật trong hệ thống Hybrid Search."
+    },
+    {
+        "question": "Tại sao cần dùng Reciprocal Rank Fusion (RRF)?",
+        "contexts": ["Reciprocal Rank Fusion (RRF) là một thuật toán kết hợp kết quả từ nhiều bộ máy tìm kiếm khác nhau (ví dụ BM25 và Vector). Nó giúp cân bằng điểm số bằng công thức 1/(rank + k), từ đó đưa ra kết quả xếp hạng tối ưu hơn mà không cần phụ thuộc vào thang điểm tuyệt đối của từng phương pháp."],
+        "ground_truth": "RRF được dùng để kết hợp và xếp hạng lại các kết quả từ các retriever khác nhau (như BM25 và Vector Search) nhằm tạo ra danh sách kết quả cuối cùng chất lượng hơn."
+    },
+    {
+        "question": "Mục tiêu chính của việc chia nhỏ tài liệu (Chunking) trong RAG là gì?",
+        "contexts": ["Chia nhỏ tài liệu (Chunking) giúp trích xuất các đoạn văn bản có độ dài phù hợp để đưa vào mô hình Vector Embedding và LLM, do các mô hình này thường có giới hạn về số lượng token ở đầu vào (context window limit)."],
+        "ground_truth": "Chunking giúp vượt qua giới hạn về token đầu vào (context window limit) của LLM và tối ưu hóa việc nhúng (embedding) để truy xuất thông tin chính xác hơn."
+    },
+    {
+        "question": "Vector Database (như ChromaDB) dùng để làm gì trong hệ thống này?",
+        "contexts": ["Vector Database (ví dụ: ChromaDB, FAISS) được sử dụng để lưu trữ các Vector Embeddings của văn bản và hỗ trợ tìm kiếm mức độ tương đồng (similarity search) với độ trễ siêu thấp khi có truy vấn từ người dùng."],
+        "ground_truth": "ChromaDB dùng để lưu trữ các Vector Embeddings và thực hiện tìm kiếm tương đồng (similarity search) để tìm ra các đoạn văn bản gần nghĩa với câu hỏi nhất."
+    },
+    {
+        "question": "Phương pháp Section-aware Chunking có ưu điểm gì so với chia nhỏ theo ký tự thông thường?",
+        "contexts": ["Section-aware Chunking cắt tài liệu dựa trên các tiêu đề mục (ví dụ: Abstract, Introduction, Conclusion) thay vì cắt ngang chừng một cách mù quáng theo số lượng ký tự. Điều này giúp giữ nguyên cấu trúc ngữ nghĩa và luận điểm của từng phần bài viết."],
+        "ground_truth": "Section-aware Chunking giúp bảo toàn trọn vẹn ngữ nghĩa và luận điểm của văn bản bằng cách cắt theo các phân vùng cấu trúc bài (như tiêu đề, phần mục) thay vì cắt đứt đoạn theo số lượng ký tự."
+    },
+    {
+        "question": "Vì sao Business Analyst Agent cần phải giữ lại metadata (Title, Authors, Section) khi nạp tài liệu?",
+        "contexts": ["Metadata như Title, Authors, và Section được gắn vào từng Chunk văn bản. Điều này rất quan trọng để Agent không chỉ đưa ra câu trả lời mà còn có thể trích dẫn nguồn (Citations) một cách chuyên nghiệp, giúp người dùng dễ dàng kiểm chứng lại thông tin."],
+        "ground_truth": "Metadata giúp hệ thống nhận diện xuất xứ của đoạn văn bản, từ đó cung cấp tính năng trích dẫn nguồn (Citations) chuyên nghiệp và giúp kiểm chứng tính xác thực."
+    },
+    {
+        "question": "Ragas framework sử dụng các chỉ số nào để đánh giá hệ thống RAG?",
+        "contexts": ["Khung đánh giá Ragas cung cấp nhiều chỉ số độc lập, trong đó phổ biến nhất là Faithfulness (đo lường câu trả lời có bịa đặt so với ngữ cảnh không), Answer Relevancy (câu trả lời có đúng trọng tâm câu hỏi không), và Context Recall (ngữ cảnh có chứa đủ thông tin để trả lời không)."],
+        "ground_truth": "Ragas thường dùng Faithfulness, Answer Relevancy và Context Recall để đánh giá lần lượt tính trung thực, độ bám sát câu hỏi và chất lượng của tài liệu truy xuất."
+    },
+    {
+        "question": "HyDE (Hypothetical Document Embeddings) giúp cải thiện việc tìm kiếm như thế nào?",
+        "contexts": ["HyDE (Hypothetical Document Embeddings) yêu cầu LLM tự bịa (sinh) ra một câu trả lời nháp dựa trên câu hỏi. Sau đó, câu trả lời nháp này được nhúng thành Vector để đi tìm kiếm tài liệu thực tế. Vì câu nháp có từ vựng và cấu trúc tương đồng với tài liệu đích hơn là câu hỏi ngắn gọn, HyDE giúp tăng đáng kể Recall."],
+        "ground_truth": "HyDE cải thiện tìm kiếm bằng cách sinh ra một câu trả lời giả định (hypothetical answer) từ câu hỏi, sau đó dùng câu giả định này để vector hóa và tìm kiếm, giúp bắt khớp với tài liệu tốt hơn so với dùng trực tiếp câu hỏi ngắn."
+    },
+    {
+        "question": "Khi nào thì hệ thống RAG cần fallback sang Wikipedia để tìm kiếm thông tin?",
+        "contexts": ["Trong trường hợp dữ liệu nội bộ không chứa thông tin liên quan (điểm tương đồng Vector thấp hơn ngưỡng 0.6), hệ thống RAG có thể kích hoạt cơ chế Fallback để chuyển truy vấn sang các nguồn từ điển mở như Wikipedia nhằm bổ sung kiến thức tổng quát."],
+        "ground_truth": "Hệ thống fallback sang Wikipedia khi độ tương đồng của tài liệu nội bộ quá thấp (dưới ngưỡng quy định), cho thấy không tìm thấy thông tin phù hợp trong dữ liệu cục bộ."
+    },
+    {
+        "question": "Tại sao không nên truyền toàn bộ tài liệu PDF vào LLM mà phải dùng RAG?",
+        "contexts": ["Truyền toàn bộ tài liệu PDF trực tiếp vào LLM (nếu vượt quá context limit) sẽ gây ra lỗi giới hạn token, làm tăng chi phí API một cách không cần thiết, và khiến LLM dễ bị xao nhãng (Lost in the Middle) dẫn đến giảm độ chính xác."],
+        "ground_truth": "Việc truyền toàn bộ PDF sẽ làm vọt chi phí API, có thể vượt giới hạn token (context window) và làm LLM bị xao nhãng, giảm độ chính xác so với việc chỉ trích xuất các chunk nhỏ liên quan qua RAG."
+    },
+    {
+        "question": "Cross-Encoder Re-ranking hoạt động như thế nào trong quá trình truy xuất?",
+        "contexts": ["Cross-Encoder Re-ranking là bước chấm điểm lại (re-rank) sau khi truy xuất ban đầu (như BM25 hay Bi-Encoder). Nó nhận đầu vào là một cặp (Câu hỏi, Đoạn tài liệu) và chạy qua mạng Neural để xuất ra một điểm số chính xác về độ liên quan, giúp đẩy các kết quả tốt nhất lên đầu."],
+        "ground_truth": "Cross-Encoder đánh giá trực tiếp mối liên hệ giữa câu hỏi và từng đoạn tài liệu được truy xuất, từ đó chấm điểm và sắp xếp lại danh sách kết quả theo độ liên quan chính xác hơn."
+    }
+]

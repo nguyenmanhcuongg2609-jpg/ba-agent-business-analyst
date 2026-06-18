@@ -1,0 +1,13 @@
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rag_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/chroma_db_storage:/app/chroma_db_storage
+      - ./backend/uploaded_papers:/app/uploaded_papers
+      - ./backend/.env:/app/.env
+    restart: always
