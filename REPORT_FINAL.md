@@ -1,53 +1,53 @@
-# BÁO CÁO TỔNG KẾT DỰ ÁN: TỪ RAG CHATBOT ĐẾN AI BUSINESS ANALYST AGENT
+# BÁO CÁO TỔNG KẾT DỰ ÁN: TỪ RAG CHATBOT ĐẾN DUAL-MODE AI AGENT (BA & QA)
 
 Dưới đây là tài liệu tổng hợp toàn bộ kiến trúc, luồng xử lý và các tính năng cốt lõi của dự án. Tài liệu này được thiết kế theo đúng chuẩn đánh giá của Mentor, sẵn sàng để đưa vào Slide báo cáo cuối khóa.
 
 ---
 
 ## 1. TỔNG QUAN KIẾN TRÚC (ARCHITECTURE OVERVIEW)
-Dự án đã có một bước chuyển mình mạnh mẽ từ một hệ thống **QA RAG thông thường** (hỏi - đáp tuyến tính) trở thành một **AI Agent tự trị** (tự suy luận, ra quyết định và sử dụng công cụ).
+Dự án đã có một bước chuyển mình mạnh mẽ từ một hệ thống **QA RAG thông thường** (hỏi - đáp tuyến tính) trở thành một **Hệ sinh thái AI Agent kép (Dual-Mode)** bao gồm Business Analyst (BA) và Quality Assurance (QA).
 
 **Sự khác biệt cốt lõi:**
 *   **Hệ cũ (RAG):** User Question $\rightarrow$ Vector Database Retrieval $\rightarrow$ LLM $\rightarrow$ Answer.
-*   **Hệ mới (AI Agent):** User Request $\rightarrow$ **Reasoning (Agent)** $\rightarrow$ **Requirement Completeness Check** $\rightarrow$ **Tool Selection** $\rightarrow$ Execute Tool $\rightarrow$ Tổng hợp $\rightarrow$ **Structured BA Output**.
+*   **Hệ mới (Dual-Agent):** User Request $\rightarrow$ **Chọn Mode (BA/QA)** $\rightarrow$ **Reasoning (Agent)** $\rightarrow$ **Clarification Check** $\rightarrow$ **Tool Selection** $\rightarrow$ Tổng hợp $\rightarrow$ **Structured Output (Jira/TestRail)**.
 
 ---
 
 ## 2. CẤU TRÚC TỆP TIN & VAI TRÒ CHÍNH (KEY COMPONENTS)
 
-### 🧠 `agent_workflow.py` (Bộ não trung tâm - LangGraph ReAct)
-*   **Chức năng:** Định nghĩa tư duy của Agent thông qua `System Prompt` nâng cao. Thay vì trả lời ngay, Agent được lập trình để lập kế hoạch (Plan) và đưa ra quyết định.
-*   **Quản lý Tool:** Tích hợp 2 công cụ song song để Agent tự do lựa chọn:
-    *   `wikipedia_rag_tool`: Dùng để tra cứu các khái niệm nền tảng mở (Scrum, Agile, v.v.).
-    *   `pdf_research_tool`: Dùng để tìm kiếm thông tin chuyên sâu trong bộ Vector Database chứa tài liệu nội bộ.
-*   **Điểm nhấn (Sprint 3):** Tích hợp logic *Clarification Questions*. Agent sẽ từ chối sinh User Story nếu yêu cầu quá mơ hồ, buộc người dùng phải làm rõ các Actor, luồng quy trình, và ràng buộc hệ thống.
+### 🧠 `agent_workflow.py` (BA Agent - LangGraph ReAct)
+*   **Chức năng:** Định nghĩa tư duy của BA Agent thông qua `System Prompt` chuyên biệt. Agent có nhiệm vụ phân tích yêu cầu, đặt câu hỏi làm rõ và viết User Story/Business Rules.
+*   **Quản lý Tool:** Tích hợp các công cụ: `wikipedia_rag_tool`, `pdf_research_tool`.
 
-### ⚙️ `rag_utils.py` & `metadata_extractor.py` (Động cơ RAG - Retrieval-Augmented Generation)
-*   **Chức năng:** Cung cấp hạ tầng xử lý dữ liệu PDF mạnh mẽ.
-*   **Điểm nhấn:** Không cắt chuỗi (chunk) một cách mù quáng, hệ thống áp dụng kỹ thuật **Section-aware Splitting** (nhận diện các chương/mục trong bài báo khoa học) để bảo toàn ngữ cảnh. Sử dụng mô hình `gemini-embedding-2` để nhúng (embed) vào ChromaDB.
+### 🕵️ `test_agent.py` (QA Agent - LangGraph ReAct)
+*   **Chức năng:** Được tạo ra để song hành cùng BA. Hệ thống System Prompt đóng vai trò là một QA Engineer, yêu cầu đầy đủ thông tin về Môi trường, Actor, Loại Test trước khi sinh ra Bảng Test Case chuyên nghiệp.
 
-### 🖥️ `app_agent.py` (Giao diện người dùng - Streamlit UI)
-*   **Chức năng:** Cung cấp trải nghiệm tương tác trực quan cho người dùng cuối.
-*   **Điểm nhấn (Sprint 4):** 
-    *   **Thinking Box (Hộp tư duy):** Hiển thị trực tiếp (Real-time) các bước suy luận và việc gọi Tool của Agent.
-    *   **PDF Upload Sidebar:** Cho phép nạp tài liệu động ngay trên giao diện web.
-    *   **Export to CSV:** Bóc tách kết quả Markdown và chuyển thành file `.csv` chuẩn định dạng, cho phép Import trực tiếp vào Jira hoặc Excel bằng Pandas.
+### ⚙️ `rag_utils.py` & `metadata_extractor.py` (Động cơ RAG)
+*   **Chức năng:** Cung cấp hạ tầng xử lý dữ liệu PDF mạnh mẽ bằng kỹ thuật **Section-aware Splitting** bảo toàn ngữ cảnh và embedding qua `gemini-embedding-2`. Cung cấp RAG tri thức dùng chung cho cả BA và QA Agent.
+
+### 🖥️ `app_agent.py` (Giao diện Streamlit Dual-Mode)
+*   **Chức năng:** Cung cấp trải nghiệm tương tác với sidebar `st.radio` cho phép switch qua lại giữa 2 chế độ làm việc (BA và QA).
+*   **Điểm nhấn:** Có vùng bộ nhớ riêng biệt (session_state) cho từng Agent, cùng giao diện Thinking Box (Hộp tư duy) hiển thị trực tiếp quá trình suy luận.
+
+### 📦 `export_utils.py` (Tiện ích bóc tách dữ liệu)
+*   **Chức năng:** Tách biệt logic Regex và Pandas DataFrame ra một tệp riêng.
+*   **Hỗ trợ đa định dạng:** Tự động parse Markdown Table ra CSV TestRail/Xray (cho QA) và parse nội dung ra CSV Jira (cho BA).
 
 ---
 
 ## 3. LUỒNG XỬ LÝ NGHIỆP VỤ (BUSINESS WORKFLOW)
 
-1. **Nạp dữ liệu (Ingestion):** Người dùng upload file tài liệu (PDF). File được băm nhỏ (chunking), tạo Vector và lưu vào kho lưu trữ (ChromaDB) một cách tự động.
-2. **Tiếp nhận Yêu cầu (Request):** Người dùng nhập một yêu cầu nghiệp vụ (VD: *"Phân tích hệ thống mượn trả sách"*).
-3. **Đánh giá mức độ đầy đủ (Completeness Check):** 
-    *   Nếu thiếu thông tin: Agent sẽ đặt câu hỏi làm rõ (VD: *"Hệ thống có quản lý phạt trễ hạn không? Actor là ai?"*).
-    *   Nếu đủ thông tin: Agent bước sang quá trình thực thi.
-4. **Gọi Công cụ (Tool Calling):** Agent sử dụng `pdf_research_tool` để quét tài liệu vừa nạp, tìm các quy trình cốt lõi để thu thập dữ kiện.
-5. **Định dạng Đầu ra (Structured Output):** LLM (Gemini 2.5 Flash) xào nấu dữ liệu và xuất ra theo đúng format ngành BA:
-    *   *Yêu cầu (Requirement)*
-    *   *User Story (As a... I want... so that...)*
-    *   *Acceptance Criteria (Tiêu chí nghiệm thu)*
-6. **Trích xuất (Export):** Người dùng click một chạm để tải xuống file CSV.
+1. **Nạp dữ liệu (Ingestion):** Người dùng upload file tài liệu (PDF/BRD).
+2. **Chọn Mode:** Người dùng chọn BA Mode hoặc QA Mode.
+3. **Tiếp nhận & Đánh giá (Clarification):** 
+    *   Cả 2 Agent đều có cơ chế từ chối trả lời ngay nếu yêu cầu mập mờ.
+    *   BA Agent sẽ hỏi về: Actor, luồng nghiệp vụ.
+    *   QA Agent sẽ hỏi về: Loại test, môi trường test.
+4. **Gọi Công cụ (Tool Calling):** Agent sử dụng `pdf_research_tool` hoặc `wikipedia_rag_tool` để đọc kiến thức.
+5. **Định dạng Đầu ra kép (Structured Output):**
+    *   **BA Mode:** Xuất Requirement, User Story, Business Rules.
+    *   **QA Mode:** Xuất Markdown Table (TC_ID, Precondition, Steps, Expected Result, Status).
+6. **Trích xuất (Export):** Người dùng click tải CSV Jira (BA) hoặc CSV TestRail (QA).
 
 ---
 
@@ -63,14 +63,15 @@ Dự án đã có một bước chuyển mình mạnh mẽ từ một hệ thố
 
 | Mốc đánh giá của Mentor | Hiện trạng Hệ thống dự án | Đánh giá |
 | :--- | :--- | :--- |
-| **Sprint 1: Agent + Tool Calling** | Agent đã tự động nhận diện và gọi song song `Wiki Tool` và `PDF Tool` dựa trên ngữ nghĩa câu hỏi. | Hoàn thành xuất sắc |
-| **Sprint 2: BA Output** | Xóa bỏ format trả lời Q&A dài dòng. 100% output định dạng chuẩn: Requirement, User Story, Acceptance Criteria. | Hoàn thành xuất sắc |
-| **Sprint 3: Clarification Questions** | Agent tự động ngăn chặn ảo giác (hallucination) bằng cách hỏi vặn lại người dùng nếu yêu cầu quá mập mờ (Missing Info). | Điểm sáng dự án |
-| **Sprint 4: Export** | Tích hợp thành công bộ Parser Regex & Pandas để xuất data thô ra định dạng CSV tương thích với Jira / Excel. | Điểm cộng kỹ thuật |
+| **Sprint 1: Tool Calling** | Agent đã tự động nhận diện và gọi song song `Wiki Tool` và `PDF Tool` dựa trên ngữ nghĩa câu hỏi. | Hoàn thành xuất sắc |
+| **Sprint 2: BA Output** | Xóa bỏ format trả lời Q&A dài dòng. 100% output định dạng chuẩn: Requirement, User Story, Business Rules. | Hoàn thành xuất sắc |
+| **Sprint 3: Clarification** | Agent tự động ngăn chặn ảo giác (hallucination) bằng cách hỏi vặn lại người dùng nếu yêu cầu quá mập mờ. | Điểm sáng dự án |
+| **Sprint 4: Dual-Mode & Export** | Phát triển thành hệ thống Đa nhân (Multi-Agent) gồm BA và QA. Tích hợp bộ Parser xuất CSV kép tương thích với Jira và TestRail. | Vượt mong đợi |
+| **Sprint 5: Auto-Testing** | Tích hợp script `playwright_test.py` và `test_mentor_cases.py` để tự động hóa quá trình nghiệm thu hệ thống. | Kỹ thuật nâng cao |
 
 ---
 **🏆 TỔNG KẾT:**
-Dự án đã vượt qua khỏi ranh giới của một hệ thống Chatbot Hỏi - Đáp thông thường để trở thành một "Đồng sự" đích thực (BA AI Assistant). Có khả năng làm chủ luồng hội thoại, ra quyết định chọn tài nguyên và tạo ra giá trị nghiệp vụ (Business Value) có thể mang đi sử dụng ngay lập tức trong môi trường phát triển phần mềm thực tế.
+Dự án đã vượt qua khỏi ranh giới của một hệ thống Chatbot Hỏi - Đáp thông thường để trở thành một "Đồng sự" đích thực (Dual AI Assistant). Có khả năng làm chủ luồng hội thoại, ra quyết định chọn tài nguyên và tạo ra giá trị nghiệp vụ song song (User Story cho Dev, Test Case cho Tester) sẵn sàng áp dụng trong mô hình Agile thực tế.
 
 ---
 

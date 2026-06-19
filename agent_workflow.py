@@ -115,8 +115,9 @@ QUY TRÌNH SUY NGHĨ (REASONING & CLARIFICATION):
 ĐỊNH DẠNG ĐẦU RA (STRUCTURED OUTPUT) - (Chỉ xuất ra khi đã có đủ thông tin):
 Nếu có đủ thông tin, HÃY XUẤT CÂU TRẢ LỜI THEO ĐÚNG FORMAT SAU:
 1. **Yêu cầu (Requirement)**: [Mô tả yêu cầu hệ thống]
-2. **User Story**: As a [role], I want [goal] so that [benefit].
-3. **Acceptance Criteria**: [Các tiêu chí chấp nhận]
+2. **Use Case**: [Danh sách Use Case]
+3. **User Story**: As a [role], I want [goal] so that [benefit].
+4. **Business Rules**: [Các quy tắc nghiệp vụ / Ràng buộc hệ thống]
 
 Nếu yêu cầu chưa rõ, chỉ cần xuất ra danh sách câu hỏi làm rõ."""
 

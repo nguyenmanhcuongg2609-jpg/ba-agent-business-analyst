@@ -1,6 +1,11 @@
-# 🕵️‍♂️ Agentic BA: Business Analyst AI Assistant
+# 🤖 Dual-Mode AI Agent: Business Analyst & QA Assistant
 
-Agentic BA là một hệ thống Trợ lý Phân tích Nghiệp vụ (Business Analyst) tự trị, được xây dựng dựa trên kiến trúc **Agentic RAG**. Hệ thống không chỉ trả lời câu hỏi thụ động, mà có khả năng **suy luận, tự động gọi công cụ (Tool Calling)** và **tương tác làm rõ yêu cầu (Elicitation)** như một chuyên viên BA thực thụ.
+Dual-Mode AI Agent (BA & QA) with Agentic RAG là một hệ sinh thái **Multi-Agent** tự trị đóng vai trò là Business Analyst (BA) và Quality Assurance (QA) ảo. Khác với các hệ thống RAG Hỏi - Đáp thông thường, hệ thống này được cung cấp khả năng tư duy (Reasoning) và sử dụng bộ công cụ (Tool Calling) để:
+1. Đọc hiểu tài liệu chuyên ngành (BRD, PDF) và bóc tách thông tin cốt lõi.
+2. Tư duy chống "Ảo giác" (Hallucination) bằng cách chủ động đặt câu hỏi làm rõ (Clarification Questions) nếu yêu cầu mập mờ.
+3. **BA Mode:** Tự động sinh ra *User Story, Business Rules*.
+4. **QA Mode:** Tự động sinh ra *Test Case, Test Scenario*.
+5. Định dạng đầu ra trực tiếp thành các file **CSV chuẩn Jira / TestRail** để đưa ngay vào Workflow thực tế.
 
 ---
 
@@ -8,8 +13,10 @@ Agentic BA là một hệ thống Trợ lý Phân tích Nghiệp vụ (Business 
 
 1. **Agentic Workflow (LangGraph):** Hệ thống tự động quyết định khi nào cần tra cứu Wikipedia, khi nào cần tìm trong tài liệu PDF nội bộ để hoàn thành yêu cầu của người dùng.
 2. **Clarification Questions (Chống Ảo giác):** Khi người dùng cung cấp yêu cầu mập mờ, Agent sẽ từ chối sinh kết quả và đặt câu hỏi ngược lại (Ví dụ: "Hệ thống có quản lý thanh toán không?", "Có những Role nào?") để thu thập đủ thông tin.
-3. **Structured BA Output:** Tự động sinh ra `Use Case`, `User Story`, và `Acceptance Criteria` cực kỳ quy chuẩn.
-4. **Jira CSV Export:** Bóc tách kết quả phân tích và xuất ra file CSV tương thích 100% với Jira/Excel chỉ bằng một cú click.
+3. **Structured Output:** 
+   - **BA Mode:** Tự động sinh ra `Business Requirements`, `Use Case`, `User Story`, và `Business Rules` chuẩn quy trình BA.
+   - **QA Mode:** Tự động sinh ra `Test Cases`, `Test Steps`, `Expected Results` phục vụ kiểm thử.
+4. **Jira & TestRail CSV Export:** Bóc tách kết quả phân tích và xuất ra file CSV tương thích 100% với Jira/Excel/TestRail chỉ bằng một cú click.
 
 ---
 
@@ -82,5 +89,5 @@ streamlit run app_agent.py
 *Giao diện xuất file CSV để import thẳng vào Jira Sprint Backlog.*
 
 ---
-**🏆 Project Status:** Completed (MVP Ready). 
-**👉 Future Work:** Tích hợp Jira API trực tiếp và phát triển thêm Traceability Mapping.
+**🏆 Project Status:** Completed (Dual-Mode Ready). 
+**👉 Future Work:** Tích hợp Jira & TestRail API trực tiếp, mở rộng Traceability Mapping và thêm Dev Agent.

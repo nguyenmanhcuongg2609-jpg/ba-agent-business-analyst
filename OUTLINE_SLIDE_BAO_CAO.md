@@ -5,7 +5,7 @@ Dựa trên toàn bộ quá trình phát triển hệ thống Agentic BA, đây 
 ---
 
 ### Slide 1 – Giới thiệu đề tài
-*   **Tiêu đề:** BA Agent sử dụng Agentic RAG và Wikipedia Knowledge Base.
+*   **Tiêu đề:** Hệ sinh thái Dual-Agent (BA & QA) sử dụng Agentic RAG.
 *   **Nội dung:** 
     *   Bối cảnh.
     *   Bài toán.
@@ -19,28 +19,29 @@ Dựa trên toàn bộ quá trình phát triển hệ thống Agentic BA, đây 
 
 ### Slide 3 – Mục tiêu hệ thống
 *   **Hệ thống có thể làm gì?**
-    *   Đọc hiểu PDF chuyên ngành.
-    *   Hỏi làm rõ yêu cầu (Elicitation / Clarification).
+    *   Đọc hiểu PDF chuyên ngành / BRD.
+    *   Hỏi làm rõ yêu cầu (Clarification) thông minh.
     *   Tra cứu Wikipedia động.
-    *   Sinh User Story & Acceptance Criteria.
-    *   Xuất CSV tương thích Jira.
+    *   Sinh User Story & Business Rules (BA Mode).
+    *   Sinh Test Case & Scenario chuyên nghiệp (QA Mode).
+    *   Xuất CSV tương thích Jira và TestRail.
 
 ### Slide 4 – Kiến trúc tổng thể (QUAN TRỌNG NHẤT)
 *   **Sơ đồ luồng xử lý:**
     ```text
     User
      ↓
-    BA Agent
+    Chế độ (Mode Selection)
+     ├── BA Agent Mode
+     └── QA/Tester Agent Mode
      ↓
-    Tool Selection
-     ├── PDF RAG Tool
-     └── Wikipedia RAG Tool
+    Tool Selection (PDF RAG / Wiki RAG)
      ↓
-    Reasoning
+    Reasoning & Clarification
      ↓
     Structured Output
-     ↓
-    CSV Export
+     ├── Jira CSV (User Story)
+     └── TestRail CSV (Test Case)
     ```
 
 ### Slide 5 – Agent Workflow
@@ -60,21 +61,22 @@ Dựa trên toàn bộ quá trình phát triển hệ thống Agentic BA, đây 
     *   *Agent phản ứng:* Có thanh toán online không? Có những vai trò nào?
 
 ### Slide 9 – Demo Results
-*   **Nội dung:** Chèn các ảnh chụp màn hình thực tế (Hoặc quay Video nhúng vào Slide).
-    *   Tool Calling.
-    *   Clarification.
+*   **Nội dung:** Chèn các ảnh chụp màn hình thực tế (từ Automation Test).
+    *   UI chuyển đổi BA / QA Mode.
+    *   Clarification Questions.
     *   User Story JSON/Markdown.
-    *   CSV Export.
+    *   Test Case Markdown Table.
+    *   CSV Export (Jira & TestRail).
 
-### Slide 10 – Đánh giá
+### Slide 10 – Đánh giá (Testing & Automation)
 *   **Bảng kết quả Test (Có minh chứng):**
-    | Test Case | Kết quả |
+    | Test Case | Automation Result |
     | :--- | :--- |
-    | PDF QA | ✅ Pass |
-    | Wiki Retrieval | ✅ Pass |
-    | Clarification | ✅ Pass |
-    | User Story | ✅ Pass |
-    | CSV Export | ✅ Pass |
+    | PDF RAG & Wiki Tool | ✅ Pass |
+    | BA Clarification & User Story | ✅ Pass |
+    | QA Clarification & Test Case | ✅ Pass |
+    | CSV Dual-Export | ✅ Pass |
+    | Playwright UI Test | ✅ Pass |
 
 ### Slide 11 – Hạn chế (Limitations)
 *   *(Ghi điểm nhờ sự khách quan, nhìn nhận đúng thực tế)*
@@ -84,12 +86,11 @@ Dựa trên toàn bộ quá trình phát triển hệ thống Agentic BA, đây 
     *   Chưa có Memory dài hạn (Long-term DB).
 
 ### Slide 12 – Hướng phát triển (Future Work)
-*   Jira Integration.
-*   Confluence Integration.
-*   Traceability Mapping.
-*   Evaluation Framework.
-*   Multi-Agent Collaboration (Thêm Dev Agent, Tester Agent).
+*   Jira & TestRail API Integration.
+*   Traceability Mapping (1 User Story -> N Test Cases).
+*   Evaluation Framework (Ragas CI/CD).
+*   Mở rộng thêm Dev Agent (Sinh code).
 
 ---
 ### 🎤 CÂU CHỐT HẠ KẾT THÚC BÀI THUYẾT TRÌNH:
-> *"Hệ thống hiện đã hoàn thành MVP của một Business Analyst Agent với khả năng Agentic RAG, Tool Calling, Clarification Questions và Structured Artifact Generation. Các hướng phát triển tiếp theo của nhóm sẽ tập trung vào Traceability, Evaluation Framework và tích hợp trực tiếp với các công cụ BA như Jira và Confluence. Em xin cảm ơn hội đồng đã lắng nghe!"*
+> *"Hệ thống hiện đã hoàn thành một hệ sinh thái Dual-Mode Agent với khả năng Agentic RAG, Tool Calling, Clarification và sinh Artifacts (User Story, Test Case) đạt chuẩn công nghiệp. Các hướng phát triển tiếp theo của nhóm sẽ tập trung vào API Automation và khả năng hợp tác đa tác tử (Multi-Agent Collaboration) sâu hơn. Em xin cảm ơn hội đồng đã lắng nghe!"*

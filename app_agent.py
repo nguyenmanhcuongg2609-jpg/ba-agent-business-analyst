@@ -8,18 +8,31 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_chroma import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from backend.metadata_extractor import section_aware_split
-from agent_workflow import ba_agent  # Import bộ não Agent đã tạo
 
-# Cấu hình đường dẫn lưu trữ
+# Import 2 Agent
+from agent_workflow import ba_agent
+from test_agent import test_agent
+
+# Import hàm export từ utils tập trung
+from export_utils import (
+    extract_ba_artifacts_to_csv,
+    extract_test_artifacts_to_csv,
+    export_chat_to_md,
+)
+
+# ==========================================
+# CẤU HÌNH
+# ==========================================
 CHROMA_DIR = "./chroma_db_storage"
 UPLOAD_DIR = "./uploaded_papers"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-2")
 
+
 def extract_paper_metadata(docs):
-    from collections import Counter
     meta = {"title": "Unknown", "authors": "Unknown", "year": "Unknown"}
-    if not docs: return meta
+    if not docs:
+        return meta
     lines = [l.strip() for l in docs[0].page_content.split("\n") if l.strip()]
     for line in lines[:8]:
         if 10 < len(line) < 200 and not re.match(r'^\d+$', line):
@@ -28,69 +41,83 @@ def extract_paper_metadata(docs):
     return meta
 
 
-# Cấu hình trang
-st.set_page_config(page_title="BA Agent AI (Pro)", page_icon="🕵️‍♂️", layout="wide")
-st.title("🕵️‍♂️ Business Analyst Agent (Tool Calling)")
-st.caption("Agent tự động lập kế hoạch, chọn Tool (Wikipedia RAG / PDF Search), và xuất ra Requirement / User Story.")
+# ==========================================
+# CẤU HÌNH TRANG
+# ==========================================
+st.set_page_config(page_title="BA & QA Agent AI", page_icon="🤖", layout="wide")
 
-# Khởi tạo lịch sử chat
-if "agent_history" not in st.session_state:
-    st.session_state.agent_history = []
-
-# Nút xóa lịch sử
-if st.button("🗑️ Xóa lịch sử hội thoại"):
-    st.session_state.agent_history = []
-    st.rerun()
-
-st.markdown("---")
-
-# --- SIDEBAR: QUẢN LÝ FILE VÀ VECTOR DATABASE ---
+# ==========================================
+# SIDEBAR
+# ==========================================
 with st.sidebar:
+
+    # --- CHỌN MODE ---
+    st.header("⚙️ Chế độ hoạt động")
+    mode = st.radio(
+        label="Chọn Agent:",
+        options=["🧑💼 Business Analyst Mode", "🕵️ Tester / QA Mode"],
+        index=0,
+        help="BA Mode sinh User Story & Acceptance Criteria. QA Mode sinh Test Case & Test Scenario."
+    )
+    is_ba_mode = mode.startswith("🧑")
+    active_agent = ba_agent if is_ba_mode else test_agent
+
+    st.markdown("---")
+
+    # --- QUẢN LÝ FILE PDF ---
     st.header("📁 Quản lý Tài liệu PDF")
-    uploaded_files = st.file_uploader("Tải lên tài liệu hoặc bài báo nghiên cứu (PDF)", type=["pdf"], accept_multiple_files=True)
-    
+    if is_ba_mode:
+        st.caption("Upload BRD, SRS, tài liệu yêu cầu...")
+    else:
+        st.caption("Upload BRD, SRS, User Story để sinh Test Case...")
+
+    uploaded_files = st.file_uploader(
+        "Tải lên tài liệu PDF", type=["pdf"], accept_multiple_files=True
+    )
+
     if uploaded_files:
         for uploaded_file in uploaded_files:
             file_path = os.path.join(UPLOAD_DIR, uploaded_file.name)
             if not os.path.exists(file_path):
                 with open(file_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
-                
+
                 with st.spinner(f"🔄 Đang phân tích PDF: {uploaded_file.name}..."):
                     try:
                         loader = PyPDFLoader(file_path)
                         docs = loader.load()
                         paper_meta = extract_paper_metadata(docs)
                         chunks = section_aware_split(docs, chunk_size=1200, chunk_overlap=150)
-                        
-                        # Lấy mẫu đại diện (stratified sampling) thay vì chỉ lấy 20 đoạn đầu
-                        # để tránh dính Rate Limit (chờ quá lâu) của tài khoản Free
+
                         if len(chunks) > 20:
                             step = len(chunks) / 20.0
                             chunks = [chunks[int(i * step)] for i in range(20)]
-                            st.warning(f"⚠️ PDF quá dài, hệ thống đã lấy mẫu 20 đoạn đại diện từ toàn bộ tài liệu (tránh lỗi Rate Limit).")
-                        
+                            st.warning("⚠️ PDF quá dài, hệ thống lấy mẫu 20 đoạn đại diện.")
+
                         for chunk in chunks:
                             chunk.metadata.update({
                                 "source_filename": uploaded_file.name,
                                 "title": paper_meta.get("title", "Unknown"),
                             })
 
-                        Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=CHROMA_DIR)
-                        st.success(f"✅ Đã nạp thành công: {uploaded_file.name} ({len(chunks)} chunks)")
+                        Chroma.from_documents(
+                            documents=chunks, embedding=embeddings,
+                            persist_directory=CHROMA_DIR
+                        )
+                        st.success(f"✅ Đã nạp: {uploaded_file.name} ({len(chunks)} chunks)")
                     except Exception as e:
                         st.error(f"❌ Lỗi xử lý file {uploaded_file.name}: {e}")
-                
+
     st.markdown("---")
-    st.subheader("📚 Tài liệu đã nạp (Trong DB)")
-    existing_files = [f for f in os.listdir(UPLOAD_DIR) if f.endswith('.pdf')]
+    st.subheader("📚 Tài liệu đã nạp")
+    existing_files = [f for f in os.listdir(UPLOAD_DIR) if f.endswith(".pdf")]
     if existing_files:
         for f in existing_files:
             st.markdown(f"- 📄 `{f}`")
     else:
-        st.info("Chưa có tài liệu nào trong hệ thống.")
+        st.info("Chưa có tài liệu nào.")
 
-    if st.button("🗑️ Xóa toàn bộ dữ liệu Vector DB"):
+    if st.button("🗑️ Xóa toàn bộ Vector DB"):
         import gc
         gc.collect()
         try:
@@ -103,151 +130,157 @@ with st.sidebar:
         except Exception as e:
             st.error(f"❌ Lỗi: {e}")
 
-# Render lịch sử
-for msg in st.session_state.agent_history:
+
+# ==========================================
+# TIÊU ĐỀ TRANG (thay đổi theo mode)
+# ==========================================
+if is_ba_mode:
+    st.title("🧑💼 Business Analyst Agent")
+    st.caption("Agent tự động sinh Requirement / User Story / Acceptance Criteria từ tài liệu và yêu cầu.")
+else:
+    st.title("🕵️ QA / Tester Agent")
+    st.caption("Agent tự động sinh Test Scenario / Test Case / Pass-Fail Criteria từ tài liệu spec.")
+
+# ==========================================
+# SESSION STATE (tách riêng history cho mỗi mode)
+# ==========================================
+ba_key   = "ba_history"
+test_key = "test_history"
+
+if ba_key   not in st.session_state: st.session_state[ba_key]   = []
+if test_key not in st.session_state: st.session_state[test_key] = []
+
+history_key = ba_key if is_ba_mode else test_key
+
+if st.button("🗑️ Xóa lịch sử hội thoại"):
+    st.session_state[history_key] = []
+    st.rerun()
+
+st.markdown("---")
+
+# ==========================================
+# RENDER LỊCH SỬ
+# ==========================================
+for msg in st.session_state[history_key]:
     content = msg.content
     if isinstance(content, list):
-        content = "\n".join([b.get("text", "") for b in content if isinstance(b, dict) and "text" in b])
-        
+        content = "\n".join(
+            b.get("text", "") for b in content
+            if isinstance(b, dict) and "text" in b
+        )
     if isinstance(msg, HumanMessage):
-        with st.chat_message("user", avatar="🧑‍💻"):
+        with st.chat_message("user", avatar="👤"):
             st.write(content)
     elif isinstance(msg, AIMessage) and content:
         with st.chat_message("assistant", avatar="🤖"):
-            st.write(content)
+            st.markdown(content)
 
-# Ô nhập liệu
-if user_query := st.chat_input("Ví dụ: Tra cứu Wiki khái niệm Scrum và viết 1 User Story..."):
-    # 1. Hiển thị câu hỏi của user
-    with st.chat_message("user", avatar="🧑‍💻"):
+# ==========================================
+# Ô NHẬP LIỆU
+# ==========================================
+placeholder = (
+    "Ví dụ: Viết User Story cho chức năng Đăng nhập..."
+    if is_ba_mode else
+    "Ví dụ: Viết Test Case cho chức năng Đăng nhập hệ thống..."
+)
+
+if user_query := st.chat_input(placeholder):
+    with st.chat_message("user", avatar="👤"):
         st.write(user_query)
-    
-    # Lưu vào lịch sử (tạm thời giới hạn lưu 10 tin nhắn gần nhất để tránh tràn Token)
-    st.session_state.agent_history.append(HumanMessage(content=user_query))
-    if len(st.session_state.agent_history) > 10:
-        st.session_state.agent_history = st.session_state.agent_history[-10:]
-        
-    # 2. Xử lý Agent
+
+    st.session_state[history_key].append(HumanMessage(content=user_query))
+
+    # Giới hạn 10 tin nhắn gần nhất
+    if len(st.session_state[history_key]) > 10:
+        st.session_state[history_key] = st.session_state[history_key][-10:]
+
     with st.chat_message("assistant", avatar="🤖"):
-        # Dùng st.status để làm UI hiển thị các bước "Suy nghĩ" (như ChatGPT)
-        status_box = st.status("🧠 Agent đang phân tích yêu cầu và lập kế hoạch...", expanded=True)
-        
+        thinking_label = (
+            "🧠 BA Agent đang phân tích yêu cầu..."
+            if is_ba_mode else
+            "🔍 QA Agent đang phân tích và sinh Test Case..."
+        )
+        status_box = st.status(thinking_label, expanded=True)
+
         try:
-            inputs = {"messages": st.session_state.agent_history}
+            inputs = {"messages": st.session_state[history_key]}
             final_answer = ""
-            
-            # Chạy Stream để lấy log từng bước của Tool
-            for chunk in ba_agent.stream(inputs):
+
+            for chunk in active_agent.stream(inputs):
                 if "agent" in chunk:
                     agent_msg = chunk["agent"]["messages"][0]
-                    # Nếu Agent quyết định dùng tool
                     if agent_msg.tool_calls:
                         for tc in agent_msg.tool_calls:
-                            status_box.write(f"🛠️ Đang gọi công cụ: **`{tc['name']}`** với từ khóa: *{tc['args'].get('query', '')}*")
-                    
-                    # Nếu Agent có câu trả lời cuối cùng
+                            status_box.write(
+                                f"🛠️ Đang gọi: **`{tc['name']}`** — *{tc['args'].get('query', '')}*"
+                            )
                     if agent_msg.content:
                         if isinstance(agent_msg.content, list):
-                            final_answer = "\n".join([b.get("text", "") for b in agent_msg.content if isinstance(b, dict) and "text" in b])
+                            final_answer = "\n".join(
+                                b.get("text", "") for b in agent_msg.content
+                                if isinstance(b, dict) and "text" in b
+                            )
                         else:
                             final_answer = agent_msg.content
-                        
+
                 elif "tools" in chunk:
-                    # Khi Tool chạy xong và trả về kết quả
                     tool_msg = chunk["tools"]["messages"][0]
-                    status_box.write(f"✅ Đã trích xuất được `{len(tool_msg.content)}` ký tự từ **`{tool_msg.name}`**")
-            
-            status_box.update(label="Hoàn tất quy trình phân tích!", state="complete", expanded=False)
-            
-            # Hiển thị kết quả cuối cùng ra màn hình
+                    status_box.write(
+                        f"✅ Đã trích xuất `{len(tool_msg.content)}` ký tự từ **`{tool_msg.name}`**"
+                    )
+
+            status_box.update(label="✅ Hoàn tất!", state="complete", expanded=False)
             st.markdown(final_answer)
-            st.session_state.agent_history.append(AIMessage(content=final_answer))
-            
+            st.session_state[history_key].append(AIMessage(content=final_answer))
+
         except Exception as e:
-            status_box.update(label="Đã xảy ra lỗi!", state="error", expanded=True)
+            status_box.update(label="❌ Đã xảy ra lỗi!", state="error", expanded=True)
             if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
-                st.error("⏳ API Key đã hết giới hạn (Quota) trong ngày. Vui lòng thay API Key mới trong file .env và khởi động lại!")
+                st.error("⏳ API Key đã hết quota. Vui lòng thay API Key mới trong file .env và khởi động lại!")
             else:
                 st.error(f"Lỗi hệ thống: {e}")
 
-# --- SPRINT 4: EXPORT TO CSV (JIRA/EXCEL FORMAT) ---
-import pandas as pd
-import re
 
-def extract_ba_artifacts_to_csv(chat_history):
-    latest_msg = ""
-    for msg in reversed(chat_history):
-        if isinstance(msg, AIMessage):
-            content = msg.content
-            if isinstance(content, list):
-                content = "\n".join([b.get("text", "") for b in content if isinstance(b, dict) and "text" in b])
-            if "User Story" in content and "Acceptance Criteria" in content:
-                latest_msg = content
-                break
-                
-    if not latest_msg: return None
-    
-    # Chia thành các block
-    blocks = re.split(r'\n(?=\s*\d+\.\s*(?:Use Case|\*\*Use Case|Yêu cầu|\*\*Yêu cầu|Requirement|\*\*Requirement))', "\n" + latest_msg)
-    
-    data = []
-    for block in blocks:
-        if not block.strip(): continue
-        
-        # Regex cực kỳ linh hoạt bỏ qua mọi loại dấu chấm tròn (◦), gạch đầu dòng, ký tự đặc biệt
-        uc = re.search(r'Use Case:?\s*\*?\*?(.*?)(?=\n|$)', block, re.IGNORECASE)
-        req = re.search(r'(?:Yêu cầu|Requirement).*?:?\s*\*?\*?(.*?)(?=\n.*User Story)', block, re.IGNORECASE | re.DOTALL)
-        us = re.search(r'User Story:?\s*\*?\*?(.*?)(?=\n.*Acceptance Criteria)', block, re.IGNORECASE | re.DOTALL)
-        ac = re.search(r'Acceptance Criteria:?\s*\*?\*?(.*)', block, re.IGNORECASE | re.DOTALL)
-        
-        # Fix: Vẫn lưu vào data ngay cả khi không có Use Case (vì Agent thường bỏ qua)
-        if us and ac:
-            data.append({
-                "Use Case": uc.group(1).strip() if uc else "Chức năng chung",
-                "Requirement": req.group(1).strip() if req else "",
-                "User Story": us.group(1).strip() if us else "",
-                "Acceptance Criteria": ac.group(1).strip() if ac else ""
-            })
-            
-    if data:
-        import pandas as pd
-        df = pd.DataFrame(data)
-        return df.to_csv(index=False).encode('utf-8-sig')
-    return None
-
-def export_chat_to_md(chat_history):
-    md_content = "# LỊCH SỬ HỘI THOẠI AGENTIC BA\n\n"
-    for msg in chat_history:
-        role = "🧑 USER" if isinstance(msg, HumanMessage) else "🤖 BA AGENT"
-        content = msg.content
-        if isinstance(content, list):
-            content = "\n".join([b.get("text", "") for b in content if isinstance(b, dict) and "text" in b])
-        md_content += f"### {role}\n{content}\n\n---\n\n"
-    return md_content.encode('utf-8')
-
+# ==========================================
+# EXPORT
+# ==========================================
 st.markdown("---")
-st.subheader("💾 LƯU TRỮ KẾT QUẢ")
+st.subheader("💾 Lưu trữ kết quả")
 col1, col2 = st.columns(2)
 
+current_history = st.session_state[history_key]
+current_mode_label = "BA" if is_ba_mode else "TEST"
+
 with col1:
-    md_data = export_chat_to_md(st.session_state.agent_history)
-    if len(st.session_state.agent_history) > 0:
+    if current_history:
+        md_data = export_chat_to_md(current_history, mode=current_mode_label)
         st.download_button(
-            label="📝 Tải toàn bộ Lịch sử Chat (.md)",
+            label="📝 Tải lịch sử Chat (.md)",
             data=md_data,
-            file_name="Chat_History.md",
+            file_name=f"Chat_History_{current_mode_label}.md",
             mime="text/markdown",
-            help="Tải đoạn chat hiện tại để đưa vào báo cáo Anti-hallucination"
         )
 
 with col2:
-    csv_data = extract_ba_artifacts_to_csv(st.session_state.agent_history)
-    if csv_data:
-        st.download_button(
-            label="📥 Tải file CSV (Excel / Jira)",
-            data=csv_data,
-            file_name="BA_User_Stories.csv",
-            mime="text/csv"
-        )
+    if is_ba_mode:
+        csv_data = extract_ba_artifacts_to_csv(current_history)
+        if csv_data:
+            st.download_button(
+                label="📥 Tải CSV Jira (User Story)",
+                data=csv_data,
+                file_name="BA_User_Stories.csv",
+                mime="text/csv",
+            )
+        else:
+            st.caption("*(CSV xuất hiện khi Agent sinh ra User Story)*")
     else:
-        st.caption("*(File CSV chỉ hiện khi Agent có tạo ra User Story)*")
+        csv_data = extract_test_artifacts_to_csv(current_history)
+        if csv_data:
+            st.download_button(
+                label="📥 Tải CSV TestRail / Xray (Test Case)",
+                data=csv_data,
+                file_name="Test_Cases.csv",
+                mime="text/csv",
+            )
+        else:
+            st.caption("*(CSV xuất hiện khi Agent sinh ra Test Case)*")
